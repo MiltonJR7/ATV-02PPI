@@ -1,0 +1,24 @@
+{
+  "name": "atv-02ppi",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MiltonJR7/ATV-02PPI.git"
+  },
+  "author": "Milton Junior",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MiltonJR7/ATV-02PPI/issues"
+  },
+  "homepage": "https://github.com/MiltonJR7/ATV-02PPI#readme",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
