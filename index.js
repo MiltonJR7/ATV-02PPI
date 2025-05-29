@@ -1,7 +1,9 @@
+import cookieParser from "cookie-parser";
 import express from "express";
+import session from "express-session";
 
 const host = "0.0.0.0";
-const port = 3005;
+const port = 3000;
 
 var listaUsuarios = [];
 var listaProdutos = [];
@@ -10,7 +12,23 @@ const app = express();
 
 app.use(express.urlencoded({extended: true}));
 
-app.get("/", (requisicao, resposta) => {
+// Preparando a aplicacao para fazer o uso de sessao
+// Adicionado a aplicacao o middleware session
+
+app.use(session({
+    secret: "M1nh4Ch4v3S3cr3t4",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { // Definir o tempo de vida util de uma sessao
+        maxAge: 1000 * 60 * 15, // Depois de 15 minutos de inatividade do usuario que criou essa sessao sera excluida  
+        httpOnly: true,
+        secure: false // true se for https
+    }
+}));
+
+app.use(cookieParser());
+
+app.get("/", verificarAutenticacao, (requisicao, resposta) => {
     resposta.send(`
             <html lang="pt-br">
             <head>
@@ -59,104 +77,104 @@ app.get("/", (requisicao, resposta) => {
 });
 
 
-app.get("/cadastroFornecedor", (requisisao, resposta) => {
+app.get("/cadastroFornecedor", verificarAutenticacao, (requisisao, resposta) => {
     resposta.send(`
-                <!DOCTYPE html>
-                <html lang="pt-br">
-                <head>
-                <meta charset="UTF-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <title>Cadastro de Fornecedor</title>
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-                <style>
-                    body {
-                    background: #f8f9fa;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 100vh;
-                    }
-                    .form-container {
-                    width: 100%;
-                    max-width: 550px;
-                    }
-                </style>
-                </head>
-                <body>
+            <!DOCTYPE html>
+            <html lang="pt-br">
+            <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>Cadastro de Fornecedor</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+            <style>
+                body {
+                background: #f8f9fa;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                }
+                .form-container {
+                width: 100%;
+                max-width: 550px;
+                }
+            </style>
+            </head>
+            <body>
 
-                <div class="form-container">
-                    <div class="card shadow rounded-4">
-                    <div class="card-body p-4">
-                        <h4 class="text-center mb-4">Cadastro de Fornecedor</h4>
-                        <form method="POST" action="/cadastroFornecedor" id="fornecedorForm" novalidate>
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="cnpj" name="cnpj" placeholder="CNPJ (somente números)"/>
-                            <div class="invalid-feedback">Informe um CNPJ válido com 14 dígitos.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="razaoSocial" name="razaoSocial" placeholder="Razão Social ou Nome do Fornecedor"/>
-                            <div class="invalid-feedback">Informe a razão social ou nome do fornecedor.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="nomeFantasia" name="nomeFantasia" placeholder="Nome Fantasia"/>
-                            <div class="invalid-feedback">Informe o nome fantasia.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="endereco" name="endereco" placeholder="Endereço"/>
-                            <div class="invalid-feedback">Informe o endereço.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="cidade" name="cidade" placeholder="Cidade"/>
-                            <div class="invalid-feedback">Informe a cidade.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <select class="form-select" id="uf" name="uf">
-                                <option value="">UF...</option>
-                                <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option>
-                                <option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option>
-                                <option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option>
-                                <option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option>
-                                <option>SP</option><option>SE</option><option>TO</option>
-                            </select>
-                            <div class="invalid-feedback">Informe a UF.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="cep" name="cep" placeholder="CEP (somente números)"/>
-                            <div class="invalid-feedback">Informe um CEP válido com 8 dígitos.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <input type="email" class="form-control" id="email" name="email" placeholder="E-mail"/>
-                            <div class="invalid-feedback">Informe um e-mail válido.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <input type="tel" class="form-control" id="telefone" name="telefone" placeholder="Telefone (somente números)""/>
-                            <div class="invalid-feedback">Informe um telefone válido (10 a 11 dígitos).</div>
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Cadastrar</button>
-                            <a class="btn btn-secondary" href="/" style="margin-top: 5px">Voltar</a>
-                        </div>
-
-                    </form>
-
+            <div class="form-container">
+                <div class="card shadow rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="text-center mb-4">Cadastro de Fornecedor</h4>
+                    <form method="POST" action="/cadastroFornecedor" id="fornecedorForm" novalidate>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="cnpj" name="cnpj" placeholder="CNPJ (somente números)"/>
+                        <div class="invalid-feedback">Informe um CNPJ válido com 14 dígitos.</div>
                     </div>
+
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="razaoSocial" name="razaoSocial" placeholder="Razão Social ou Nome do Fornecedor"/>
+                        <div class="invalid-feedback">Informe a razão social ou nome do fornecedor.</div>
                     </div>
+
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="nomeFantasia" name="nomeFantasia" placeholder="Nome Fantasia"/>
+                        <div class="invalid-feedback">Informe o nome fantasia.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="endereco" name="endereco" placeholder="Endereço"/>
+                        <div class="invalid-feedback">Informe o endereço.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="cidade" name="cidade" placeholder="Cidade"/>
+                        <div class="invalid-feedback">Informe a cidade.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <select class="form-select" id="uf" name="uf">
+                            <option value="">UF...</option>
+                            <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option>
+                            <option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+                            <option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option>
+                            <option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+                            <option>SP</option><option>SE</option><option>TO</option>
+                        </select>
+                        <div class="invalid-feedback">Informe a UF.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="cep" name="cep" placeholder="CEP (somente números)"/>
+                        <div class="invalid-feedback">Informe um CEP válido com 8 dígitos.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="email" class="form-control" id="email" name="email" placeholder="E-mail"/>
+                        <div class="invalid-feedback">Informe um e-mail válido.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="tel" class="form-control" id="telefone" name="telefone" placeholder="Telefone (somente números)""/>
+                        <div class="invalid-feedback">Informe um telefone válido (10 a 11 dígitos).</div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Cadastrar</button>
+                        <a class="btn btn-secondary" href="/" style="margin-top: 5px">Voltar</a>
+                    </div>
+
+                </form>
+
                 </div>
-                </body>
-                </html>
-        `)
+                </div>
+            </div>
+            </body>
+            </html>
+    `)
 })
 
-app.get("/produtos", (requisicao, resposta) => {
+app.get("/produtos", verificarAutenticacao, (requisicao, resposta) => {
     resposta.send(`
                 <!DOCTYPE html>
                 <html lang="pt-BR">
@@ -214,7 +232,7 @@ app.get("/produtos", (requisicao, resposta) => {
 });
 
 
-app.post("/cadastroFornecedor", (requisisao, resposta) => {
+app.post("/cadastroFornecedor", verificarAutenticacao, (requisisao, resposta) => {
     const cnpj = requisisao.body.cnpj;
     const razaoSocial = requisisao.body.razaoSocial;
     const nomeFantasia = requisisao.body.nomeFantasia;
@@ -329,7 +347,7 @@ app.post("/cadastroFornecedor", (requisisao, resposta) => {
 });
 
 
-app.post("/produtos", (requisicao, resposta) => {
+app.post("/produtos", verificarAutenticacao, (requisicao, resposta) => {
     const nome = requisicao.body.nome;
     const categoria = requisicao.body.categoria;
     const preco = requisicao.body.preco;
@@ -419,7 +437,7 @@ app.post("/produtos", (requisicao, resposta) => {
     }
 });
 
-app.get("/listaUsuarios", (requisicao, resposta) => {
+app.get("/listaUsuarios", verificarAutenticacao, (requisicao, resposta) => {
     let conteudo=`
             <html lang="pt-br">
                 <head>
@@ -471,7 +489,7 @@ app.get("/listaUsuarios", (requisicao, resposta) => {
     resposta.end();
 })
 
-app.get("/listaProdutos", (requisicao, resposta) => {
+app.get("/listaProdutos", verificarAutenticacao, (requisicao, resposta) => {
     let conteudo=`
             <html lang="pt-br">
                 <head>
@@ -542,7 +560,7 @@ app.get("/login", (requisicao, resposta) => {
                         <form action="/login" method="POST">
                         <div class="mb-3">
                             <label for="Usuario" class="form-label">Usuario</label>
-                            <input type="Usuario" class="form-control" id="Usuario" name="Usuario"/>
+                            <input type="Usuario" class="form-control" id="usuario" name="usuario"/>
                         </div>
                         <div class="mb-3">
                             <label for="senha" class="form-label">Senha</label>
@@ -558,18 +576,81 @@ app.get("/login", (requisicao, resposta) => {
                     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
                     </body>
                 </html>
-        `)
+        `);
 })
 
 app.post("/login", (requisicao, resposta) => {
     const usuario = requisicao.body.usuario;    
     const senha = requisicao.body.senha;
+
+    if(usuario == "admin" && senha == "admin") {
+        requisicao.session.logado = true;
+        const dataHorasAtuais = new Date();
+        requisicao.cookies.ultimoLogin = dataHorasAtuais.toLocaleString(), {}
+        resposta.redirect("/");
+    } else {
+        resposta.send(`
+            <!DOCTYPE html>
+                <html lang="pt-br">
+                <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <title>Login</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+                <style>
+                    body {
+                    background-color: #f8f9fa;
+                    height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    }
+                    .card {
+                    border-radius: 1rem;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    }
+                </style>
+                </head>
+                <body>
+                <div class="card p-4" style="width: 100%; max-width: 360px;">
+                    <h2 class="text-center mb-4">Login</h2>
+                    <form action="/login" method="POST">
+                    <div class="mb-3">
+                        <label for="Usuario" class="form-label">Usuario</label>
+                        <input type="Usuario" class="form-control" id="usuario" name="usuario"/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="senha" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="senha" name="senha"/>
+                    </div>
+                    <span style="color: red">Usuario e senha invalidos<span>
+                    <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                    </form>
+                    <div class="text-center mt-3">
+                    <a href="#">Esqueceu a senha?</a>
+                    </div>
+                </div>
+
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+                </body>
+            </html>
+        `);
+    }
+
     //Realizar Validacao
-    resposta.redirect("/");
 })
 
-app.get("/logout", (requisicao, resposta) => {
-    resposta.send("<p>Voce saiu do sistema</p>");
+function verificarAutenticacao(requisicao, resposta, next) {
+    if(requisicao.session.logado) {
+        next();
+    } else {
+        resposta.redirect("/login");
+    }
+}
+
+app.get("/logout", verificarAutenticacao, (requisicao, resposta) => {
+    requisicao.session.destroy();
+    resposta.redirect("/login");
 })
 
 
