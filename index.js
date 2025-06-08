@@ -29,6 +29,7 @@ app.use(session({
 app.use(cookieParser());
 
 app.get("/", verificarAutenticacao, (requisicao, resposta) => {
+    const ultimoLogin = requisicao.cookies.ultimoLogin;
     resposta.send(`
             <html lang="pt-br">
             <head>
@@ -59,10 +60,13 @@ app.get("/", verificarAutenticacao, (requisicao, resposta) => {
                             </ul>
                               <ul class="navbar-nav ms-auto">
                                 <li class="nav-item">
-                                <a class="nav-link" href="/login">Login</a>
+                                    <span class="navbar-text nav-link disabled">${ultimoLogin ? "Último acesso: " + ultimoLogin : ""}</span>
                                 </li>
                                 <li class="nav-item">
-                                <a class="nav-link" href="/logout">Sair</a>
+                                    <a class="nav-link" href="/login">Login</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/logout">Sair</a>
                                 </li>
                             </ul>
                         </div>
@@ -182,10 +186,23 @@ app.get("/produtos", verificarAutenticacao, (requisicao, resposta) => {
                     <meta charset="UTF-8">
                     <title>Cadastro de Produto</title>
                     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+                    <style>
+                        body {
+                        background: #f8f9fa;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 100vh;
+                        }
+                        .form-container {
+                        width: 100%;
+                        max-width: 650px;
+                        }
+                    </style>
                 </head>
                 <body>
 
-                <div class="container mt-5">
+                <div class="container mt-5 form-container">
                     <div class="card shadow p-4">
                         <form method="POST" action="/produtos">
                             <fieldset>
@@ -194,6 +211,36 @@ app.get("/produtos", verificarAutenticacao, (requisicao, resposta) => {
                             <div class="mb-3">
                                 <label for="nome" class="form-label">Nome do Produto:</label>
                                 <input type="text" class="form-control" id="nome" name="nome">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="nomeFabricante" class="form-label">Nome do Fabricante:</label>
+                                <input type="text" class="form-control" id="nomeFabricante" name="nomeFabricante">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="codigoDeBarras" class="form-label">Codigo de Barras:</label>
+                                <input type="number" class="form-control" id="codigoBarras" name="codigoBarras" step="0.01">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="precoDeCusto" class="form-label">Preço de custo:</label>
+                                <input type="number" class="form-control" id="precoCusto" name="precoCusto" step="0.01">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="precoDeVenda" class="form-label">Preço de venda:</label>
+                                <input type="number" class="form-control" id="precoVenda" name="precoVenda" step="0.01">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="dataDeValidade" class="form-label">Data de validade:</label>
+                                <input type="date" class="form-control" id="dataValidade" name="dataValidade">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="quantidadeEmEstoque" class="form-label">Quantidade em estoque:</label>
+                                <input type="number" class="form-control" id="quantEstoque" name="quantEstoque" step="0.01">
                             </div>
 
                             <div class="mb-3">
@@ -207,12 +254,7 @@ app.get("/produtos", verificarAutenticacao, (requisicao, resposta) => {
                             </div>
 
                             <div class="mb-3">
-                                <label for="preco" class="form-label">Preço:</label>
-                                <input type="number" class="form-control" id="preco" name="preco" step="0.01">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="descricao" class="form-label">Descrição:</label>
+                                <label for="descricao" class="form-label">Descrição do produto:</label>
                                 <textarea class="form-control" id="descricao" name="descricao" rows="4"></textarea>
                             </div>
 
@@ -350,19 +392,33 @@ app.post("/cadastroFornecedor", verificarAutenticacao, (requisisao, resposta) =>
 app.post("/produtos", verificarAutenticacao, (requisicao, resposta) => {
     const nome = requisicao.body.nome;
     const categoria = requisicao.body.categoria;
-    const preco = requisicao.body.preco;
+    const precoCusto = requisicao.body.precoCusto;
     const descricao = requisicao.body.descricao;
+    const codigoBarras = requisicao.body.codigoBarras;
+    const precoVenda = requisicao.body.precoVenda;
+    const quantEstoque = requisicao.body.quantEstoque;
+    const nomeFabricante = requisicao.body.nomeFabricante;
+    const dataValidade = requisicao.body.dataValidade;
 
-    const precoFloat = parseFloat(preco);
+    const precoCustoFloat = parseFloat(precoCusto);
+    const precoVendaFloat = parseFloat(precoVenda);
 
     let erros = {
         nome: !nome ? "O nome é obrigatório." : "",
         categoria: !categoria ? "A categoria é obrigatória." : "",
-        preco: !preco ? "O preço é obrigatório." :
-               isNaN(precoFloat) ? "O preço deve ser um número válido." :
-               precoFloat < 0.01 ? "O preço deve ser no mínimo R$ 0,01." :
-               precoFloat > 100000 ? "O preço não pode ser maior que R$ 100.000,00." : "",
-        descricao: !descricao ? "A descrição é obrigatória." : ""
+        precoCusto: !precoCusto ? "O preço de custo é obrigatório." :
+               isNaN(precoCustoFloat) ? "O preço de custo deve ser um número válido." :
+               precoCustoFloat < 0.01 ? "O preço de custo deve ser no mínimo R$ 0,01." :
+               precoCustoFloat > 100000 ? "O preço de custo não pode ser maior que R$ 100.000,00." : "",
+        descricao: !descricao ? "A descrição é obrigatória." : "",
+        precoVenda: !precoVenda ? "O preço de venda é obrigatório." :
+               isNaN(precoVendaFloat) ? "O preço de venda deve ser um número válido." :
+               precoVendaFloat < 0.01 ? "O preço de venda deve ser no mínimo R$ 0,01." :
+               precoVendaFloat > 100000 ? "O preço de venda não pode ser maior que R$ 100.000,00." : "",
+        codigoBarras: !codigoBarras ? "O codigo de barras é obrigatório." : "",
+        quantEstoque: !quantEstoque ? "A quantidade é obrigatória." : "",
+        nomeFabricante: !nomeFabricante ? "O nome do fabricante é obrigatório." : "",
+        dataValidade: !dataValidade ?"A data de validade é obrigatória." : ""
     };
 
     const temErros = Object.values(erros).some(msg => msg !== "");
@@ -371,8 +427,13 @@ app.post("/produtos", verificarAutenticacao, (requisicao, resposta) => {
         listaProdutos.push({
             nome: nome,
             categoria: categoria,
-            preco: preco,
-            descricao: descricao
+            precoCusto: precoCusto,
+            descricao: descricao,
+            precoVenda: precoVenda,
+            codigoBarras: codigoBarras,
+            quantEstoque: quantEstoque,
+            nomeFabricante: nomeFabricante,
+            dataValidade: dataValidade
         });
         resposta.redirect("/listaProdutos");
     } else {
@@ -383,9 +444,22 @@ app.post("/produtos", verificarAutenticacao, (requisicao, resposta) => {
             <meta charset="UTF-8">
             <title>Cadastro de Produto</title>
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+            <style>
+                body {
+                    background: #f8f9fa;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                }
+                .form-container {
+                    width: 100%;
+                    max-width: 650px;
+                }
+            </style>
         </head>
         <body>
-        <div class="container mt-5">
+        <div class="container mt-5 form-container">
             <div class="card shadow p-4">
                 <form method="POST" action="/produtos">
                     <fieldset>
@@ -396,6 +470,42 @@ app.post("/produtos", verificarAutenticacao, (requisicao, resposta) => {
                         <label for="nome" class="form-label">Nome do Produto:</label>
                         <input type="text" class="form-control" id="nome" name="nome" value="${nome || ""}">
                         ${erros.nome ? `<span class="text-danger">${erros.nome}</span>` : ""}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="nomeFabricante" class="form-label">Nome do Fabricante:</label>
+                        <input type="text" class="form-control" id="nomeFabricante" name="nomeFabricante" value="${nomeFabricante || ""}">
+                        ${erros.nomeFabricante ? `<span class="text-danger">${erros.nomeFabricante}</span>` : ""}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="codigoDeBarras" class="form-label">Codigo de Barras:</label>
+                        <input type="number" class="form-control" id="codigoBarras" name="codigoBarras" step="0.01" value="${codigoBarras || ""}">
+                        ${erros.codigoBarras ? `<span class="text-danger">${erros.codigoBarras}</span>` : ""}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="precoDeCusto" class="form-label">Preço de custo:</label>
+                        <input type="number" class="form-control" id="precoCusto" name="precoCusto" step="0.01" value="${precoCusto || ""}">
+                        ${erros.precoCusto ? `<span class="text-danger">${erros.precoCusto}</span>` : ""}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="precoDeVenda" class="form-label">Preço de venda:</label>
+                        <input type="number" class="form-control" id="precoVenda" name="precoVenda" step="0.01" value="${precoVenda || ""}">
+                        ${erros.precoVenda ? `<span class="text-danger">${erros.precoVenda}</span>` : ""}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="dataDeValidade" class="form-label">Data de validade:</label>
+                        <input type="date" class="form-control" id="dataValidade" name="dataValidade" value="${dataValidade || ""}">
+                        ${erros.dataValidade ? `<span class="text-danger">${erros.dataValidade}</span>` : ""}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="quantidadeEmEstoque" class="form-label">Quantidade em estoque:</label>
+                        <input type="number" class="form-control" id="quantEstoque" name="quantEstoque" step="0.01" value="${quantEstoque || ""}">
+                        ${erros.quantEstoque ? `<span class="text-danger">${erros.quantEstoque}</span>` : ""}
                     </div>
 
                     <div class="mb-3">
@@ -410,13 +520,7 @@ app.post("/produtos", verificarAutenticacao, (requisicao, resposta) => {
                     </div>
 
                     <div class="mb-3">
-                        <label for="preco" class="form-label">Preço:</label>
-                        <input type="number" class="form-control" id="preco" name="preco" step="0.01" value="${preco || ""}">
-                        ${erros.preco ? `<span class="text-danger">${erros.preco}</span>` : ""}
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="descricao" class="form-label">Descrição:</label>
+                        <label for="descricao" class="form-label">Descrição do produto:</label>
                         <textarea class="form-control" id="descricao" name="descricao" rows="4">${descricao || ""}</textarea>
                         ${erros.descricao ? `<span class="text-danger">${erros.descricao}</span>` : ""}
                     </div>
@@ -504,8 +608,13 @@ app.get("/listaProdutos", verificarAutenticacao, (requisicao, resposta) => {
                             <thead>
                                 <tr>
                                     <th scope="col">Nome</th>
+                                    <th scope="col">Fabricante</th>
+                                    <th scope="col">Codigo de Barras</th>
+                                    <th scope="col">Preco de custo</th>
+                                    <th scope="col">Preco de venda</th>
+                                    <th scope="col">Validade</th>
+                                    <th scope="col">Estoque</th>
                                     <th scope="col">Categoria</th>
-                                    <th scope="col">preco</th>
                                     <th scope="col">descricao</th>
                                 </tr>
                             </thead>
@@ -514,8 +623,13 @@ app.get("/listaProdutos", verificarAutenticacao, (requisicao, resposta) => {
                                 conteudo = conteudo + `
                                         <tr>
                                             <td>${listaProdutos[i].nome}</td>
+                                            <td>${listaProdutos[i].nomeFabricante}</td>
+                                            <td>${listaProdutos[i].codigoBarras}</td>
+                                            <td>${listaProdutos[i].precoCusto}</td>
+                                            <td>${listaProdutos[i].precoVenda}</td>
+                                            <td>${listaProdutos[i].dataValidade}</td>
+                                            <td>${listaProdutos[i].quantEstoque}</td>
                                             <td>${listaProdutos[i].categoria}</td>
-                                            <td>${listaProdutos[i].preco}</td>
                                             <td>${listaProdutos[i].descricao}</td>
                                         </tr> ` 
                                     }
@@ -583,10 +697,10 @@ app.post("/login", (requisicao, resposta) => {
     const usuario = requisicao.body.usuario;    
     const senha = requisicao.body.senha;
 
-    if(usuario == "admin" && senha == "admin") {
+    if(usuario == "admin" && senha == "123") {
         requisicao.session.logado = true;
         const dataHorasAtuais = new Date();
-        requisicao.cookies.ultimoLogin = dataHorasAtuais.toLocaleString(), {}
+        resposta.cookie('ultimoLogin', dataHorasAtuais.toLocaleString());
         resposta.redirect("/");
     } else {
         resposta.send(`
@@ -636,8 +750,6 @@ app.post("/login", (requisicao, resposta) => {
             </html>
         `);
     }
-
-    //Realizar Validacao
 })
 
 function verificarAutenticacao(requisicao, resposta, next) {
